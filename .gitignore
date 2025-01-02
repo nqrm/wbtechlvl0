@@ -1,1 +1,2 @@
-/order_services/cmd/producer/.env
+.env
+/redpanda

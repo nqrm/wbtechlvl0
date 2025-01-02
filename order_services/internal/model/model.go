@@ -1,4 +1,4 @@
-package models
+package model
 
 type Order struct {
 	OrderUID          string   `json:"order_uid"`
@@ -12,7 +12,7 @@ type Order struct {
 	CustomerID        string   `json:"customer_id"`
 	DeliveryService   string   `json:"delivery_service"`
 	ShardKey          string   `json:"shardkey"`
-	SmID              string   `json:"sm_id"`
+	SmID              int      `json:"sm_id"`
 	DateCreated       string   `json:"date_created"`
 	OofShard          string   `json:"oof_shard"`
 }
