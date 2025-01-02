@@ -1,5 +1,7 @@
 package main
 
+import "nqrm/wbtechlvl0/order_services/internal/app"
+
 func main() {
 	/*
 		query := `SELECT * FROM orders WHERE order_details->>'order_uid' = $1`
@@ -9,5 +11,5 @@ func main() {
 		if err != nil {
 			log.Fatalf("Query failed: %v\n", err)
 		}*/
-
+	app.Run()
 }

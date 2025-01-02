@@ -32,6 +32,7 @@ func main() {
 		fmt.Println(err)
 	}
 	defer file.Close()
+	ctx := context.Background()
 
 	var order model.Order
 	byteValue, _ := io.ReadAll(file)
@@ -58,7 +59,7 @@ func main() {
 		Value: jsonOrder,
 	}
 
-	if err := client.ProduceSync(context.Background(), record).FirstErr(); err != nil { // mb TryProduce
+	if err := client.ProduceSync(ctx, record).FirstErr(); err != nil { // mb TryProduce
 		log.Fatalf("Produce failed: %v\n", err)
 		return
 	}
