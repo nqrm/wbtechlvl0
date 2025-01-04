@@ -29,12 +29,12 @@ func NewKafkaService(opts []kgo.Opt, cache repository.CacheOrder, db repository.
 Записываем в бд и кэш только те сообщения, которые соответсвуют типу Order
 */
 func (k *KafkaService) Consuming(ctx context.Context) {
-	fetches := k.client.PollFetches(ctx)
-	if errs := fetches.Errors(); len(errs) > 0 {
-		log.Printf("Fetching erros: %v\n", errs)
-	}
-
 	for {
+		fetches := k.client.PollFetches(ctx)
+		if errs := fetches.Errors(); len(errs) > 0 {
+			log.Printf("Fetching erros: %v\n", errs)
+		}
+
 		fetches.EachTopic(func(p kgo.FetchTopic) {
 			p.EachRecord(func(record *kgo.Record) {
 				var order model.Order

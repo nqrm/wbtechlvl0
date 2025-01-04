@@ -3,10 +3,13 @@ package app
 import (
 	"context"
 	"log"
+	"net/http"
+	controller "nqrm/wbtechlvl0/order_services/internal/controller/http"
 	"nqrm/wbtechlvl0/order_services/internal/repository/cache"
 	"nqrm/wbtechlvl0/order_services/internal/repository/pgrepo"
 	"nqrm/wbtechlvl0/order_services/internal/services"
 	"os"
+	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -34,7 +37,30 @@ func Run() {
 	}
 	kafkaServ := services.NewKafkaService(opts, cache, postgre)
 	defer kafkaServ.CloseClient()
-	kafkaServ.Consuming(ctx)
 
 	orderService := services.NewOrderService(postgre, cache)
+	orderRouter := controller.NewOrderRouter(orderService)
+	srv := &http.Server{
+		Handler: orderRouter,
+		Addr:    "localhost:8000",
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		kafkaServ.Consuming(ctx)
+		defer wg.Done()
+	}()
+
+	go func() {
+		log.Printf("listening on %s\n", srv.Addr)
+		err := srv.ListenAndServe()
+		if err != nil {
+			log.Fatalf("error listening and serving: %s\n", err)
+		}
+		defer wg.Done()
+	}()
+
+	wg.Wait()
 }
