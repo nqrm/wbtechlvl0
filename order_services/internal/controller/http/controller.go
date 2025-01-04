@@ -20,22 +20,5 @@ func NewOrderRouter(orderService OrderService) *mux.Router {
 	httpContoller := &httpContoller{orderService}
 	r := mux.NewRouter()
 	r.HandleFunc("/orders/{order}", httpContoller.OrderHandler).Methods(http.MethodGet)
-	r.HandleFunc("/", httpContoller.Handler)
-
 	return r
 }
-
-func (hc *httpContoller) Handler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("hello"))
-
-}
-
-/*
-func NewRouter(orderService OrderService) *mux.Router {
-	httpContoller := NewHttpContoller(orderService)
-	r := mux.NewRouter()
-	r.HandleFunc("/orders/{order}", httpContoller.OrderHandler).Methods(http.MethodGet)
-
-	return r
-}
-*/

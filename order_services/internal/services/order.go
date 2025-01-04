@@ -26,3 +26,16 @@ func (os *OrderService) GetOrderByID(ctx context.Context, orderUID string) (mode
 
 	return *order, nil
 }
+
+func (os *OrderService) Recovery(ctx context.Context) error {
+	orders, err := os.db.GetAllOrders(ctx)
+	fmt.Println(len(orders))
+	if err != nil {
+		return err
+	}
+
+	for _, order := range orders {
+		os.cache.Set(&order)
+	}
+	return nil
+}

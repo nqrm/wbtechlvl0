@@ -29,6 +29,17 @@ func Run() {
 	postgre := pgrepo.NewPG(orderDB)
 	cache := cache.NewCacheStorage()
 
+	orderService := services.NewOrderService(postgre, cache)
+	err = orderService.Recovery(ctx)
+	if err != nil {
+		log.Printf("Unable to recovery cache", err)
+	}
+	orderRouter := controller.NewOrderRouter(orderService)
+	srv := &http.Server{
+		Handler: orderRouter,
+		Addr:    "localhost:8000",
+	}
+
 	// kafka consumer
 	opts := []kgo.Opt{
 		kgo.SeedBrokers("localhost:19092"),
@@ -37,13 +48,6 @@ func Run() {
 	}
 	kafkaServ := services.NewKafkaService(opts, cache, postgre)
 	defer kafkaServ.CloseClient()
-
-	orderService := services.NewOrderService(postgre, cache)
-	orderRouter := controller.NewOrderRouter(orderService)
-	srv := &http.Server{
-		Handler: orderRouter,
-		Addr:    "localhost:8000",
-	}
 
 	var wg sync.WaitGroup
 	wg.Add(2)

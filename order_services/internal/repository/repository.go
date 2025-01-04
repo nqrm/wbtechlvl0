@@ -7,6 +7,7 @@ import (
 
 type OrderDB interface {
 	GetOrderByID(ctx context.Context, orderUID string) (model.Order, error)
+	GetAllOrders(ctx context.Context) ([]model.Order, error)
 	AddOrder(ctx context.Context, order model.Order) error
 }
 

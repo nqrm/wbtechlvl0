@@ -25,8 +25,7 @@ func NewKafkaService(opts []kgo.Opt, cache repository.CacheOrder, db repository.
 }
 
 /*
-Забираем все сообщения из топика
-Записываем в бд и кэш только те сообщения, которые соответсвуют типу Order
+Добавить проверку на тип Order
 */
 func (k *KafkaService) Consuming(ctx context.Context) {
 	for {
@@ -38,7 +37,7 @@ func (k *KafkaService) Consuming(ctx context.Context) {
 		fetches.EachTopic(func(p kgo.FetchTopic) {
 			p.EachRecord(func(record *kgo.Record) {
 				var order model.Order
-				err := json.Unmarshal(record.Value, &order) // проверка, что в топик записали Order
+				err := json.Unmarshal(record.Value, &order)
 				if err != nil {
 					log.Printf("Failed to unmarshal JSON: %v\n", err)
 					return
