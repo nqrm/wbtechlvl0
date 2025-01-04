@@ -42,6 +42,7 @@ func main() {
 	}
 
 	id := uuid.New()
+	fmt.Println(id)
 	order.OrderUID = id.String()
 
 	/*for {

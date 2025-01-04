@@ -3,7 +3,6 @@ package pgrepo
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"nqrm/wbtechlvl0/order_services/internal/model"
 
@@ -14,21 +13,8 @@ type postgres struct {
 	db *pgxpool.Pool
 }
 
-func NewPG(connStr string) (*postgres, error) {
-	db, err := pgxpool.New(context.Background(), connStr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &postgres{db: db}, nil
-}
-
-func (pg *postgres) Ping(ctx context.Context) error {
-	return pg.db.Ping(ctx)
-}
-
-func (pg *postgres) Close() {
-	pg.db.Close()
+func NewPG(db *pgxpool.Pool) *postgres {
+	return &postgres{db}
 }
 
 func (pg *postgres) GetOrderByID(ctx context.Context, orderUID string) (model.Order, error) {
@@ -46,7 +32,22 @@ func (pg *postgres) GetOrderByID(ctx context.Context, orderUID string) (model.Or
 		log.Fatalf("Failed to unmarshal JSON: %v\n", err)
 	}
 
-	fmt.Printf("Parsed Order: %+v\n", order)
+	return order, err
+}
 
-	return order, nil
+func (pg *postgres) AddOrder(ctx context.Context, order model.Order) error {
+
+	orderJSON, err := json.Marshal(order)
+	if err != nil {
+		log.Fatalf("Failed to marshal order to JSON: %v\n", err)
+	}
+
+	query := `INSERT INTO orders (order_details) VALUES ($1)`
+
+	_, err = pg.db.Exec(context.Background(), query, orderJSON)
+	if err != nil {
+		log.Fatalf("Failed to insert order into database: %v\n", err)
+	}
+
+	return err
 }

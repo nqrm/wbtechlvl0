@@ -3,25 +3,28 @@ package app
 import (
 	"context"
 	"log"
+	"nqrm/wbtechlvl0/order_services/internal/repository/cache"
 	"nqrm/wbtechlvl0/order_services/internal/repository/pgrepo"
 	"nqrm/wbtechlvl0/order_services/internal/services"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 func Run() {
+	ctx := context.Background()
+
 	godotenv.Load("../../.env")
-	orderDB, err := pgrepo.NewPG(os.Getenv("DATABASE_URL"))
+	orderDB, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v", err)
 	}
-	err = orderDB.Ping(context.Background())
-	if err != nil {
-		log.Fatalf("Unable to ping database: %v", err)
-	}
 	defer orderDB.Close()
+
+	postgre := pgrepo.NewPG(orderDB)
+	cache := cache.NewCacheStorage()
 
 	// kafka consumer
 	opts := []kgo.Opt{
@@ -29,10 +32,9 @@ func Run() {
 		kgo.ConsumeTopics("orders"),
 		kgo.ClientID("consumer-client-id"),
 	}
-	kafkaServ, err := services.NewKafkaService(opts)
-	if err != nil {
-		log.Fatalf("Problems when creating KafkaService: %v", err)
-	}
-	kafkaServ.StartConsume(context.Background())
+	kafkaServ := services.NewKafkaService(opts, cache, postgre)
 	defer kafkaServ.CloseClient()
+	kafkaServ.Consuming(ctx)
+
+	orderService := services.NewOrderService(postgre, cache)
 }
