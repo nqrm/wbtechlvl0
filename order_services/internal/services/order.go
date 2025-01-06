@@ -29,7 +29,6 @@ func (os *OrderService) GetOrderByID(ctx context.Context, orderUID string) (mode
 
 func (os *OrderService) Recovery(ctx context.Context) error {
 	orders, err := os.db.GetAllOrders(ctx)
-	fmt.Println(len(orders))
 	if err != nil {
 		return err
 	}

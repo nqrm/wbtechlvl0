@@ -17,19 +17,20 @@ func NewPG(db *pgxpool.Pool) *postgres {
 	return &postgres{db}
 }
 
-// вынести десериализацию, возвращать []byte
-// в запросе выбирать конкретные поля, а не *
-func (pg *postgres) GetOrderByID(ctx context.Context, orderUID string) (model.Order, error) {
-	query := `SELECT * FROM orders WHERE order_details->>'order_uid' = $1`
+// функция не нужна т.к. все заказы достаются из кэша
+/*func (pg *postgres) GetOrderByID(ctx context.Context, orderUID string) (model.Order, error) {
+	query := `SELECT order_details FROM orders WHERE order_details->>'order_uid' = $1`
 
-	var orderData string
-	err := pg.db.QueryRow(ctx, query, orderUID).Scan(&orderData)
+	//var orderData string
+	var order model.Order
+	err := pg.db.QueryRow(ctx, query, orderUID).Scan(&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Delivery, &order.Payment,
+		&order.Items, &order.Locale, &order.InternalSignature, &order.CustomerID, &order.DeliveryService, &order.ShardKey, &order.SmID,
+		&order.DateCreated, &order.OofShard)
 	if err != nil {
 		log.Printf("Query failed: %v\n", err)
 		return model.Order{}, err
 	}
 
-	var order model.Order
 	err = json.Unmarshal([]byte(orderData), &order)
 	if err != nil {
 		log.Printf("Failed to unmarshal JSON: %v\n", err)
@@ -37,9 +38,8 @@ func (pg *postgres) GetOrderByID(ctx context.Context, orderUID string) (model.Or
 	}
 
 	return order, err
-}
+}*/
 
-// вынести десериализацию, возвращать [][]byte
 func (pg *postgres) GetAllOrders(ctx context.Context) ([]model.Order, error) {
 	query := `SELECT order_details FROM orders`
 
@@ -50,15 +50,15 @@ func (pg *postgres) GetAllOrders(ctx context.Context) ([]model.Order, error) {
 
 	var orders []model.Order
 	for rows.Next() {
-		var order model.Order
-		var orderData string
+		var orderData []byte
 		if err := rows.Scan(&orderData); err != nil {
-			return nil, err
+			log.Fatal(err)
 		}
-		err = json.Unmarshal([]byte(orderData), &order)
+
+		var order model.Order
+		err = json.Unmarshal(orderData, &order)
 		if err != nil {
 			log.Fatalf("Failed to unmarshal JSON: %v\n", err)
-			return nil, err
 		}
 		orders = append(orders, order)
 
@@ -67,7 +67,6 @@ func (pg *postgres) GetAllOrders(ctx context.Context) ([]model.Order, error) {
 	return orders, nil
 }
 
-// вынести сериализацию, передавать []byte
 func (pg *postgres) AddOrder(ctx context.Context, order model.Order) error {
 
 	orderJSON, err := json.Marshal(order)

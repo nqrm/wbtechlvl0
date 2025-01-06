@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
@@ -24,9 +25,6 @@ func NewKafkaService(opts []kgo.Opt, cache repository.CacheOrder, db repository.
 	return &KafkaService{client, cache, db}
 }
 
-/*
-Добавить проверку на тип Order
-*/
 func (k *KafkaService) Consuming(ctx context.Context) {
 	for {
 		fetches := k.client.PollFetches(ctx)
@@ -36,10 +34,18 @@ func (k *KafkaService) Consuming(ctx context.Context) {
 
 		fetches.EachTopic(func(p kgo.FetchTopic) {
 			p.EachRecord(func(record *kgo.Record) {
+				orderData := record.Value
+				ok := json.Valid(orderData)
+				if !ok {
+					log.Printf("Producer message is not valid in JSON format: %v\n", string(orderData))
+					return
+				}
+				dec := json.NewDecoder(bytes.NewReader(orderData))
+				dec.DisallowUnknownFields() // проверка что сообщение из топика содержит все поля Order
+
 				var order model.Order
-				err := json.Unmarshal(record.Value, &order)
-				if err != nil {
-					log.Printf("Failed to unmarshal JSON: %v\n", err)
+				if err := dec.Decode(&order); err != nil {
+					log.Printf("Failed to decode Order:", err)
 					return
 				}
 				k.db.AddOrder(ctx, order)

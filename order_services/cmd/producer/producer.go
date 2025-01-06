@@ -8,6 +8,7 @@ import (
 	"log"
 	"nqrm/wbtechlvl0/order_services/internal/model"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -41,27 +42,24 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	id := uuid.New()
-	fmt.Println(id)
-	order.OrderUID = id.String()
-
-	/*for {
-		id = uuid.New()
+	for {
+		id := uuid.New()
+		fmt.Println(id)
 		order.OrderUID = id.String()
+		jsonOrder, err := json.Marshal(order)
+		if err != nil {
+			log.Printf("JSON Marshall error : %v", err)
+		}
+		record := &kgo.Record{
+			Value: jsonOrder,
+		}
+
+		if err := client.ProduceSync(ctx, record).FirstErr(); err != nil {
+			log.Fatalf("Produce failed: %v\n", err)
+			return
+		}
 
 		time.Sleep(5 * time.Second)
-	}*/
-
-	jsonOrder, err := json.Marshal(order)
-	if err != nil {
-		log.Printf("JSON Marshall error : %v", err)
-	}
-	record := &kgo.Record{
-		Value: jsonOrder,
 	}
 
-	if err := client.ProduceSync(ctx, record).FirstErr(); err != nil { // mb TryProduce
-		log.Fatalf("Produce failed: %v\n", err)
-		return
-	}
 }

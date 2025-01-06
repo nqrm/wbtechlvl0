@@ -53,12 +53,13 @@ func Run() {
 	wg.Add(2)
 
 	go func() {
+		log.Printf("kafka consumer starting\n")
 		kafkaServ.Consuming(ctx)
 		defer wg.Done()
 	}()
 
 	go func() {
-		log.Printf("listening on %s\n", srv.Addr)
+		log.Printf("http server listening on %s\n", srv.Addr)
 		err := srv.ListenAndServe()
 		if err != nil {
 			log.Fatalf("error listening and serving: %s\n", err)
